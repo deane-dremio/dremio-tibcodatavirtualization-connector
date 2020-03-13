@@ -38,6 +38,41 @@ data_types:
       name: "bigint"
     required_cast_arguments: "none"
   - source:
+      name: "VARCHAR"
+    dremio:
+      name: "varchar"
+    required_cast_arguments: "none"
+  - source:
+      name: "BOOLEAN"
+    dremio:
+      name: "boolean"
+    required_cast_arguments: "none"
+  - source:
+      name: "DOUBLE"
+    dremio:
+      name: "double"
+    required_cast_arguments: "none"
+  - source:
+      name: "INTEGER"
+    dremio:
+      name: "integer"
+    required_cast_arguments: "none"
+  - source:
+      name: "DATE"
+    dremio:
+      name: "date"
+    required_cast_arguments: "none"
+  - source:
+      name: "TIME"
+    dremio:
+      name: "time"
+    required_cast_arguments: "none"
+  - source:
+      name: "TIMESTAMP"
+    dremio:
+      name: "timestamp"
+    required_cast_arguments: "none"
+  - source:
       name: "BINARY"
     dremio:
       name: "varchar"
@@ -53,11 +88,6 @@ data_types:
       name: "varchar"
     required_cast_arguments: "none"
   - source:
-      name: "BOOLEAN"
-    dremio:
-      name: "boolean"
-    required_cast_arguments: "none"
-  - source:
       name: "CHAR"
     dremio:
       name: "varchar"
@@ -68,22 +98,7 @@ data_types:
       name: "varchar"
     required_cast_arguments: "none"
   - source:
-      name: "DATE"
-    dremio:
-      name: "date"
-    required_cast_arguments: "none"
-  - source:
-      name: "DECFLOAT"
-    dremio:
-      name: "double"
-    required_cast_arguments: "none"
-  - source:
       name: "DECIMAL"
-    dremio:
-      name: "double"
-    required_cast_arguments: "none"
-  - source:
-      name: "DOUBLE"
     dremio:
       name: "double"
     required_cast_arguments: "none"
@@ -91,11 +106,6 @@ data_types:
       name: "FLOAT"
     dremio:
       name: "double"
-    required_cast_arguments: "none"
-  - source:
-      name: "INTEGER"
-    dremio:
-      name: "integer"
     required_cast_arguments: "none"
   - source:
       name: "LONGVARCHAR"
@@ -123,27 +133,12 @@ data_types:
       name: "integer"
     required_cast_arguments: "none"
   - source:
-      name: "TIME"
-    dremio:
-      name: "time"
-    required_cast_arguments: "none"
-  - source:
-      name: "TIMESTAMP"
-    dremio:
-      name: "timestamp"
-    required_cast_arguments: "none"
-  - source:
       name: "TINYINT"
     dremio:
       name: "integer"
     required_cast_arguments: "none"
   - source:
       name: "VARBINARY"
-    dremio:
-      name: "varchar"
-    required_cast_arguments: "none"
-  - source:
-      name: "VARCHAR"
     dremio:
       name: "varchar"
     required_cast_arguments: "none"
@@ -165,6 +160,10 @@ relational_algebra:
         enable: true
       count_distinct:
         enable: true
+      count_multi:
+        enable: false
+      count_distinct_multi:
+        enable: false
     functions:
     - names:
       - "avg"
@@ -173,7 +172,16 @@ relational_algebra:
         - "double"
         return: "double"
       - args:
+        - "decimal"
+        return: "double"
+      - args:
         - "integer"
+        return: "double"
+      - args:
+        - "float"
+        return: "double"
+      - args:
+        - "bigint"
         return: "double"
     - names:
       - "max"
@@ -186,6 +194,15 @@ relational_algebra:
         - "double"
         return: "double"
       - args:
+        - "decimal"
+        return: "decimal"
+      - args:
+        - "float"
+        return: "float"
+      - args:
+        - "bigint"
+        return: "bigint"
+      - args:
         - "varchar"
         return: "varchar"
     - names:
@@ -197,7 +214,57 @@ relational_algebra:
       - args:
         - "integer"
         return: "bigint"
-# DEANE: WHAT ABOUT STDDEV and the others mentioned in the Aggregate section of the Dremio docs? Check!!
+        rewrite: "SUM(CAST({0} AS BIGINT))"
+      - args:
+        - "bigint"
+        return: "bigint"
+      - args:
+        - "decimal"
+        return: "decimal"
+      - args:
+        - "float"
+        return: "double"
+    - names:
+      - "stddev_pop"
+      - "stddev_samp"
+      - "var_pop"
+      - "var_samp"
+      - "variance"
+      signatures:
+      - args:
+        - "double"
+        return: "double"
+      - args:
+        - "integer"
+        return: "double"
+      - args:
+        - "bigint"
+        return: "double"
+      - args:
+        - "float"
+        return: "double"
+      - args:
+        - "decimal"
+        return: "double" 
+    - names:
+      - "stddev"
+      signatures:
+      - args:
+        - "double"
+        return: "double"
+      - args:
+        - "integer"
+        return: "double"
+        rewrite: "STDDEV({0})"
+      - args:
+        - "bigint"
+        return: "double"
+      - args:
+        - "float"
+        return: "double"
+      - args:
+        - "decimal"
+        return: "double"
   except:
     enable: true
   project:
@@ -243,9 +310,11 @@ relational_algebra:
 # Describe the set of function signatures that are internally supported.
 expressions:
   subqueries:
+    enable: true
     correlated: true
     scalar: true
     in_clause: true
+    exists_clause: true
   supports_case: true
   supports_over: true
   operators:
@@ -562,7 +631,7 @@ expressions:
             - "integer"
           return: "double"
     - names:
-        - "is null"
+      - "is null"
       signatures:
         - args:
             - "float"
@@ -595,7 +664,7 @@ expressions:
             - "bigint"
           return: "boolean"
     - names:
-        - "is not null"
+      - "is not null"
       signatures:
         - args:
             - "float"
@@ -627,6 +696,392 @@ expressions:
         - args:
             - "bigint"
           return: "boolean"
+    - names:
+      - "is distinct from"
+      signatures:
+        - args:
+            - "boolean"
+            - "boolean"
+          return: "boolean"
+          rewrite: "CASE WHEN ({0} IS NULL AND {1} IS NULL) OR ({0} = {1}) THEN 0 ELSE 1 END = 1 "
+        - args:
+            - "varbinary"
+            - "varbinary"
+          return: "boolean"
+          rewrite: "CASE WHEN ({0} IS NULL AND {1} IS NULL) OR ({0} = {1}) THEN 0 ELSE 1 END = 1 "
+        - args:
+            - "date"
+            - "date"
+          return: "boolean"
+          rewrite: "CASE WHEN ({0} IS NULL AND {1} IS NULL) OR ({0} = {1}) THEN 0 ELSE 1 END = 1 "
+        - args:
+            - "integer"
+            - "integer"
+          return: "boolean"
+          rewrite: "CASE WHEN ({0} IS NULL AND {1} IS NULL) OR ({0} = {1}) THEN 0 ELSE 1 END = 1 "
+        - args:
+            - "bigint"
+            - "bigint"
+          return: "boolean"
+          rewrite: "CASE WHEN ({0} IS NULL AND {1} IS NULL) OR ({0} = {1}) THEN 0 ELSE 1 END = 1 "
+        - args:
+            - "integer"
+            - "bigint"
+          return: "boolean"
+          rewrite: "CASE WHEN ({0} IS NULL AND {1} IS NULL) OR ({0} = {1}) THEN 0 ELSE 1 END = 1 "
+        - args:
+            - "bigint"
+            - "integer"
+          return: "boolean"
+          rewrite: "CASE WHEN ({0} IS NULL AND {1} IS NULL) OR ({0} = {1}) THEN 0 ELSE 1 END = 1 "
+        - args:
+            - "double"
+            - "double"
+          return: "boolean"
+          rewrite: "CASE WHEN ({0} IS NULL AND {1} IS NULL) OR ({0} = {1}) THEN 0 ELSE 1 END = 1 "
+        - args:
+            - "double"
+            - "integer"
+          return: "boolean"
+          rewrite: "CASE WHEN ({0} IS NULL AND {1} IS NULL) OR ({0} = {1}) THEN 0 ELSE 1 END = 1 "
+        - args:
+            - "integer"
+            - "double"
+          return: "boolean"
+          rewrite: "CASE WHEN ({0} IS NULL AND {1} IS NULL) OR ({0} = {1}) THEN 0 ELSE 1 END = 1 "
+        - args:
+            - "bigint"
+            - "double"
+          return: "boolean"
+          rewrite: "CASE WHEN ({0} IS NULL AND {1} IS NULL) OR ({0} = {1}) THEN 0 ELSE 1 END = 1 "
+        - args:
+            - "double"
+            - "bigint"
+          return: "boolean"
+          rewrite: "CASE WHEN ({0} IS NULL AND {1} IS NULL) OR ({0} = {1}) THEN 0 ELSE 1 END = 1 "
+        - args:
+            - "time"
+            - "time"
+          return: "boolean"
+          rewrite: "CASE WHEN ({0} IS NULL AND {1} IS NULL) OR ({0} = {1}) THEN 0 ELSE 1 END = 1 "
+        - args:
+            - "timestamp"
+            - "timestamp"
+          return: "boolean"
+          rewrite: "CASE WHEN ({0} IS NULL AND {1} IS NULL) OR ({0} = {1}) THEN 0 ELSE 1 END = 1 "
+        - args:
+            - "varchar"
+            - "varchar"
+          return: "boolean"
+          rewrite: "CASE WHEN ({0} IS NULL AND {1} IS NULL) OR ({0} = {1}) THEN 0 ELSE 1 END = 1 "
+        - args:
+            - "varchar"
+            - "integer"
+          return: "boolean"
+          rewrite: "CASE WHEN ({0} IS NULL AND {1} IS NULL) OR ((LENGTH(REGEXP_EXTRACT({0}, ''^-?[0-9]+$'',0))>0 ) AND CAST({0} AS INTEGER) = {1}) THEN 0 ELSE 1 END = 1 "
+        - args:
+            - "integer"
+            - "varchar"
+          return: "boolean"
+          rewrite: "CASE WHEN ({0} IS NULL AND {1} IS NULL) OR ((LENGTH(REGEXP_EXTRACT({1}, ''^-?[0-9]+$'', 0))>0) AND {0} = CAST({1} AS INTEGER)) THEN 0 ELSE 1 END = 1 "
+        - args:
+            - "varchar"
+            - "bigint"
+          return: "boolean"
+          rewrite: "CASE WHEN ({0} IS NULL AND {1} IS NULL) OR ((LENGTH(REGEXP_EXTRACT({0}, ''^-?[0-9]+$'', 0))>0) AND CAST({0} AS INTEGER) = {1}) THEN 0 ELSE 1 END = 1 "
+        - args:
+            - "bigint"
+            - "varchar"
+          return: "boolean"
+          rewrite: "CASE WHEN ({0} IS NULL AND {1} IS NULL) OR ((LENGTH(REGEXP_EXTRACT({1}, ''^-?[0-9]+$'', 0))>0) AND {0} = CAST({1} AS INTEGER)) THEN 0 ELSE 1 END = 1 "
+        - args:
+            - "varchar"
+            - "double"
+          return: "boolean"
+          rewrite: "CASE WHEN ({0} IS NULL AND {1} IS NULL) OR ((LENGTH(REGEXP_EXTRACT({0}, ''^[+\\-]?[0-9]+\\.?[0-9]*$'', 0))>0) AND CAST({0} AS FLOAT) = {1}) THEN 0 ELSE 1 END = 1 "
+        - args:
+            - "double"
+            - "varchar"
+          return: "boolean"
+          rewrite: "CASE WHEN ({0} IS NULL AND {1} IS NULL) OR ((LENGTH(REGEXP_EXTRACT({1}, ''^[+\\-]?[0-9]+\\.?[0-9]*$'', 0))>0) AND {0} = CAST({1} AS FLOAT)) THEN 0 ELSE 1 END = 1 "
+        - args:
+            - "varchar"
+            - "timestamp"
+          return: "boolean"
+          rewrite: "CASE WHEN ({0} IS NULL AND {1} IS NULL) OR ((LENGTH(REGEXP_EXTRACT({0}, ''^[0-9]+\\-[0-9][0-9]\\-[0-9][0-9]( [0-9]+:[0-9][0-9]:[0-9][0-9](\\.[0-9]+)?)?$'', 0))>0) AND CAST({0} AS TIMESTAMP) = {1}) THEN 0 ELSE 1 END = 1 "
+        - args:
+            - "timestamp"
+            - "varchar"
+          return: "boolean"
+          rewrite: "CASE WHEN ({0} IS NULL AND {1} IS NULL) OR ((LENGTH(REGEXP_EXTRACT({1}, ''^[0-9]+\\-[0-9][0-9]\\-[0-9][0-9]( [0-9]+:[0-9][0-9]:[0-9][0-9](\\.[0-9]+)?)?$'', 0))>0) AND {0} = CAST({1} AS TIMESTAMP)) THEN 0 ELSE 1 END = 1 "
+        - args:
+            - "varchar"
+            - "time"
+          return: "boolean"
+          rewrite: "CASE WHEN ({0} IS NULL AND {1} IS NULL) OR ((LENGTH(REGEXP_EXTRACT({0}, ''^[0-9]+:[0-9][0-9](:[0-9][0-9](\\.[0-9]+))?$'', 0))>0) AND CAST({0} AS TIME) = {1}) THEN 0 ELSE 1 END = 1 "
+        - args:
+            - "time"
+            - "varchar"
+          return: "boolean"
+          rewrite: "CASE WHEN ({0} IS NULL AND {1} IS NULL) OR ((LENGTH(REGEXP_EXTRACT({1}, ''^[0-9]+:[0-9][0-9](:[0-9][0-9](\\.[0-9]+))?$'', 0))>0) AND {0} = CAST({1} AS TIME)) THEN 0 ELSE 1 END = 1 "
+        - args:
+            - "varchar"
+            - "date"
+          return: "boolean"
+          rewrite: "CASE WHEN ({0} IS NULL AND {1} IS NULL) OR ((LENGTH(REGEXP_EXTRACT({0}, ''^[0-9]+\\-[0-9][0-9]\\-[0-9][0-9]( 00:00:00(.0+)?)?$'', 0))>0) AND CAST({0} AS DATE) = {1}) THEN 0 ELSE 1 END = 1 "
+        - args:
+            - "date"
+            - "varchar"
+          return: "boolean"
+          rewrite: "CASE WHEN ({0} IS NULL AND {1} IS NULL) OR ((LENGTH(REGEXP_EXTRACT({1}, ''^[0-9]+\\-[0-9][0-9]\\-[0-9][0-9]( 00:00:00(.0+)?)?$'', 0))>0) AND {0} = CAST({1} AS DATE)) THEN 0 ELSE 1 END = 1 "
+        - args:
+            - "boolean"
+            - "varchar"
+          return: "boolean"
+          rewrite: "CASE WHEN ({0} IS NULL AND {1} IS NULL) OR ((LENGTH(REGEXP_EXTRACT(LOWER({1}), ''^([tf01yn]|yes|no|true|false|on|off)$'', 0))>0) AND {0} = CAST({1} AS BOOLEAN)) THEN 0 ELSE 1 END = 1 "
+        - args:
+            - "varchar"
+            - "boolean"
+          return: "boolean"
+          rewrite: "CASE WHEN ({0} IS NULL AND {1} IS NULL) OR ((LENGTH(REGEXP_EXTRACT(LOWER({0}), ''^([tf01yn]|yes|no|true|false|on|off)$'', 0))>0) AND CAST({0} AS BOOLEAN) = {1}) THEN 0 ELSE 1 END = 1 "
+        - args:
+            - "float"
+            - "float"
+          return: "boolean"
+          rewrite: "CASE WHEN ({0} IS NULL AND {1} IS NULL) OR ({0} = {1}) THEN 0 ELSE 1 END = 1 "
+        - args:
+            - "float"
+            - "integer"
+          return: "boolean"
+          rewrite: "CASE WHEN ({0} IS NULL AND {1} IS NULL) OR ({0} = {1}) THEN 0 ELSE 1 END = 1 "
+        - args:
+            - "integer"
+            - "float"
+          return: "boolean"
+          rewrite: "CASE WHEN ({0} IS NULL AND {1} IS NULL) OR ({0} = {1}) THEN 0 ELSE 1 END = 1 "
+        - args:
+            - "float"
+            - "bigint"
+          return: "boolean"
+          rewrite: "CASE WHEN ({0} IS NULL AND {1} IS NULL) OR ({0} = {1}) THEN 0 ELSE 1 END = 1 "
+        - args:
+            - "bigint"
+            - "float"
+          return: "boolean"
+          rewrite: "CASE WHEN ({0} IS NULL AND {1} IS NULL) OR ({0} = {1}) THEN 0 ELSE 1 END = 1 "
+        - args:
+            - "float"
+            - "double"
+          return: "boolean"
+          rewrite: "CASE WHEN ({0} IS NULL AND {1} IS NULL) OR ({0} = {1}) THEN 0 ELSE 1 END = 1 "
+        - args:
+            - "double"
+            - "float"
+          return: "boolean"
+          rewrite: "CASE WHEN ({0} IS NULL AND {1} IS NULL) OR ({0} = {1}) THEN 0 ELSE 1 END = 1 "
+        - args:
+            - "float"
+            - "varchar"
+          return: "boolean"
+          rewrite: "CASE WHEN ({0} IS NULL AND {1} IS NULL) OR ((LENGTH(REGEXP_EXTRACT({1}, ''^[+\\-]?[0-9]+\\.?[0-9]*$'', 0))>0) AND {0} = CAST({1} AS FLOAT)) THEN 0 ELSE 1 END = 1 "
+        - args:
+            - "varchar"
+            - "float"
+          return: "boolean"
+          rewrite: "CASE WHEN ({0} IS NULL AND {1} IS NULL) OR ((LENGTH(REGEXP_EXTRACT({0}, ''^[+\\-]?[0-9]+\\.?[0-9]*$'', 0))>0) AND CAST({1} AS FLOAT) = {1}) THEN 0 ELSE 1 END = 1 "
+    - names:
+      - "is not distinct from"
+      signatures:
+      - args:
+        - "boolean"
+        - "boolean"
+        return: "boolean"
+        rewrite: "(({0} IS NULL AND {1} IS NULL) OR ({0} = {1}))"
+      - args:
+        - "varbinary"
+        - "varbinary"
+        return: "boolean"
+        rewrite: "(({0} IS NULL AND {1} IS NULL) OR ({0} = {1}))"
+      - args:
+        - "date"
+        - "date"
+        return: "boolean"
+        rewrite: "(({0} IS NULL AND {1} IS NULL) OR ({0} = {1}))"
+      - args:
+        - "integer"
+        - "integer"
+        return: "boolean"
+        rewrite: "(({0} IS NULL AND {1} IS NULL) OR ({0} = {1}))"
+      - args:
+        - "bigint"
+        - "bigint"
+        return: "boolean"
+        rewrite: "(({0} IS NULL AND {1} IS NULL) OR ({0} = {1}))"
+      - args:
+        - "integer"
+        - "bigint"
+        return: "boolean"
+        rewrite: "(({0} IS NULL AND {1} IS NULL) OR ({0} = {1}))"
+      - args:
+        - "bigint"
+        - "integer"
+        return: "boolean"
+        rewrite: "(({0} IS NULL AND {1} IS NULL) OR ({0} = {1}))"
+      - args:
+        - "double"
+        - "double"
+        return: "boolean"
+        rewrite: "(({0} IS NULL AND {1} IS NULL) OR ({0} = {1}))"
+      - args:
+        - "double"
+        - "integer"
+        return: "boolean"
+        rewrite: "(({0} IS NULL AND {1} IS NULL) OR ({0} = {1}))"
+      - args:
+        - "integer"
+        - "double"
+        return: "boolean"
+        rewrite: "(({0} IS NULL AND {1} IS NULL) OR ({0} = {1}))"
+      - args:
+        - "bigint"
+        - "double"
+        return: "boolean"
+        rewrite: "(({0} IS NULL AND {1} IS NULL) OR ({0} = {1}))"
+      - args:
+        - "double"
+        - "bigint"
+        return: "boolean"
+        rewrite: "(({0} IS NULL AND {1} IS NULL) OR ({0} = {1}))"
+      - args:
+        - "time"
+        - "time"
+        return: "boolean"
+        rewrite: "(({0} IS NULL AND {1} IS NULL) OR ({0} = {1}))"
+      - args:
+        - "timestamp"
+        - "timestamp"
+        return: "boolean"
+        rewrite: "(({0} IS NULL AND {1} IS NULL) OR ({0} = {1}))"
+      - args:
+        - "varchar"
+        - "varchar"
+        return: "boolean"
+        rewrite: "(({0} IS NULL AND {1} IS NULL) OR ({0} = {1}))"
+      - args:
+        - "varchar"
+        - "integer"
+        return: "boolean"
+        rewrite: "(({0} IS NULL AND {1} IS NULL) OR ((LENGTH(REGEXP_EXTRACT({0}, ''^-?[0-9]+$'', 0))>0) AND CAST({0} AS INTEGER) = {1}))"
+      - args:
+        - "integer"
+        - "varchar"
+        return: "boolean"
+        rewrite: "(({0} IS NULL AND {1} IS NULL) OR ((LENGTH(REGEXP_EXTRACT({1}, ''^-?[0-9]+$'', 0))>0) AND {0} = CAST({1} AS INTEGER)))"
+      - args:
+        - "varchar"
+        - "bigint"
+        return: "boolean"
+        rewrite: "(({0} IS NULL AND {1} IS NULL) OR ((LENGTH(REGEXP_EXTRACT((LENGTH(REGEXP_EXTRACT({0}, ''^-?[0-9]+$'', 0))>0) AND CAST({0} AS INTEGER) = {1}))"
+      - args:
+        - "bigint"
+        - "varchar"
+        return: "boolean"
+        rewrite: "(({0} IS NULL AND {1} IS NULL) OR ((LENGTH(REGEXP_EXTRACT({1}, ''^-?[0-9]+$'', 0))>0) AND {0} = CAST({1} AS INTEGER)))"
+      - args:
+        - "varchar"
+        - "double"
+        return: "boolean"
+        rewrite: "(({0} IS NULL AND {1} IS NULL) OR ((LENGTH(REGEXP_EXTRACT({0}, ''^[+\\-]?[0-9]+\\.?[0-9]*$'', 0))>0) AND CAST({0} AS FLOAT) = {1}))"
+      - args:
+        - "double"
+        - "varchar"
+        return: "boolean"
+        rewrite: "(({0} IS NULL AND {1} IS NULL) OR ((LENGTH(REGEXP_EXTRACT({1}, ''^[+\\-]?[0-9]+\\.?[0-9]*$'', 0))>0) AND {0} = CAST({1} AS FLOAT)))"
+      - args:
+        - "varchar"
+        - "timestamp"
+        return: "boolean"
+        rewrite: "(({0} IS NULL AND {1} IS NULL) OR ((LENGTH(REGEXP_EXTRACT({0}, ''^[0-9]+\\-[0-9][0-9]\\-[0-9][0-9]( [0-9]+:[0-9][0-9]:[0-9][0-9](\\.[0-9]+)?)?$'', 0))>0) AND CAST({0} AS TIMESTAMP) = {1}))"
+      - args:
+        - "timestamp"
+        - "varchar"
+        return: "boolean"
+        rewrite: "(({0} IS NULL AND {1} IS NULL) OR ((LENGTH(REGEXP_EXTRACT({1}, ''^[0-9]+\\-[0-9][0-9]\\-[0-9][0-9]( [0-9]+:[0-9][0-9]:[0-9][0-9](\\.[0-9]+)?)?$'', 0))>0) AND {0} = CAST({1} AS TIMESTAMP)))"
+      - args:
+        - "varchar"
+        - "time"
+        return: "boolean"
+        rewrite: "(({0} IS NULL AND {1} IS NULL) OR ((LENGTH(REGEXP_EXTRACT({0}, ''^[0-9]+:[0-9][0-9](:[0-9][0-9](\\.[0-9]+))?$'', 0))>0) AND CAST({0} AS TIME) = {1}))"
+      - args:
+        - "time"
+        - "varchar"
+        return: "boolean"
+        rewrite: "(({0} IS NULL AND {1} IS NULL) OR ((LENGTH(REGEXP_EXTRACT({1}, ''^[0-9]+:[0-9][0-9](:[0-9][0-9](\\.[0-9]+))?$'', 0))>0) AND {0} = CAST({1} AS TIME)))"
+      - args:
+        - "varchar"
+        - "date"
+        return: "boolean"
+        rewrite: "(({0} IS NULL AND {1} IS NULL) OR ((LENGTH(REGEXP_EXTRACT({0}, ''^[0-9]+\\-[0-9][0-9]\\-[0-9][0-9]( 00:00:00(.0+)?)?$'', 0))>0) AND CAST({0} AS DATE) = {1}))"
+      - args:
+        - "date"
+        - "varchar"
+        return: "boolean"
+        rewrite: "(({0} IS NULL AND {1} IS NULL) OR ((LENGTH(REGEXP_EXTRACT({1}, ''^[0-9]+\\-[0-9][0-9]\\-[0-9][0-9]( 00:00:00(.0+)?)?$'', 0))>0) AND {0} = CAST({1} AS DATE)))"
+      - args:
+        - "boolean"
+        - "varchar"
+        return: "boolean"
+        rewrite: "(({0} IS NULL AND {1} IS NULL) OR ((LENGTH(REGEXP_EXTRACT(LOWER({1}), ''^([tf01yn]|yes|no|true|false|on|off)$'', 0))>0) AND {0} = CAST({1} AS BOOLEAN)))"
+      - args:
+        - "varchar"
+        - "boolean"
+        return: "boolean"
+        rewrite: "(({0} IS NULL AND {1} IS NULL) OR ((LENGTH(REGEXP_EXTRACT(LOWER({0}), ''^([tf01yn]|yes|no|true|false|on|off)$'', 0))>0) AND CAST({0} AS BOOLEAN) = {1}))"
+      - args:
+        - "float"
+        - "float"
+        return: "boolean"
+        rewrite: "(({0} IS NULL AND {1} IS NULL) OR ({0} = {1}))"
+      - args:
+        - "float"
+        - "integer"
+        return: "boolean"
+        rewrite: "(({0} IS NULL AND {1} IS NULL) OR ({0} = {1}))"
+      - args:
+        - "integer"
+        - "float"
+        return: "boolean"
+        rewrite: "(({0} IS NULL AND {1} IS NULL) OR ({0} = {1}))"
+      - args:
+        - "float"
+        - "bigint"
+        return: "boolean"
+        rewrite: "(({0} IS NULL AND {1} IS NULL) OR ({0} = {1}))"
+      - args:
+        - "bigint"
+        - "float"
+        return: "boolean"
+        rewrite: "(({0} IS NULL AND {1} IS NULL) OR ({0} = {1}))"
+      - args:
+        - "float"
+        - "double"
+        return: "boolean"
+        rewrite: "(({0} IS NULL AND {1} IS NULL) OR ({0} = {1}))"
+      - args:
+        - "double"
+        - "float"
+        return: "boolean"
+        rewrite: "(({0} IS NULL AND {1} IS NULL) OR ({0} = {1}))"
+      - args:
+        - "float"
+        - "varchar"
+        return: "boolean"
+        rewrite: "(({0} IS NULL AND {1} IS NULL) OR ((LENGTH(REGEXP_EXTRACT({1}, ''^[+\\-]?[0-9]+\\.?[0-9]*$'', 0))>0) AND {0} = CAST({1} AS FLOAT)))"
+      - args:
+        - "varchar"
+        - "float"
+        return: "boolean"
+        rewrite: "(({0} IS NULL AND {1} IS NULL) OR ((LENGTH(REGEXP_EXTRACT({0}, ''^[+\\-]?[0-9]+\\.?[0-9]*$'', 0))>0) AND CAST({1} AS FLOAT) = {1}))"
     - names:
         - "="
       signatures:
@@ -2483,6 +2938,7 @@ expressions:
             - "integer"
             - "integer"
           return: "varchar"
+          rewrite: "substring({0},{1},{2})"
     - names:
         - "substring"
       signatures:
@@ -2490,6 +2946,7 @@ expressions:
             - "varchar"
             - "integer"
           return: "varchar"
+          rewrite: "substring({0},{1})"
     - names:
         - "substr"
       signatures:
@@ -2675,11 +3132,16 @@ expressions:
             - "timestamp"
             - "varchar"
           return: "timestamp"
-          
-    # Window (SUM etc.. OVER...)
-    # DEANE GOT TO HERE
-
   variable_length_operators:
+    - names:
+        - concat
+      variable_signatures:
+        - return: varchar
+          arg_type: varchar
+          variable_rewrite:
+            separator_sequence:
+              - ' || '
+            rewrite_format: '{separator[0]}'
     - names:
         - and
       variable_signatures:
@@ -2690,3 +3152,4 @@ expressions:
       variable_signatures:
         - return: boolean
           arg_type: boolean
+  window_functions: []
